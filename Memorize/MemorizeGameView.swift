@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  MemorizeGameView.swift
 //  Memorize
 //
 //  Created by Veronika Horovenko on 25.09.2025.
@@ -9,119 +9,51 @@ import SwiftUI
 
 struct MemorizeGameView: View {
     
-    enum CardTheme: CaseIterable {
-        case halloween
-        case flowers
-        case fruits
-        case enimals
-        
-        var title: String {
-            switch self {
-            case .halloween: return "Halloween"
-            case .flowers: return "Flowers"
-            case .fruits: return "Fruits"
-            case .enimals: return "Enimals"
-            }
-        }
-        
-        var emojis: [String] {
-            switch self {
-            case .halloween: return ["👻", "🎃", "🕷️", "😈", "💀", "🕸️", "🧙‍♀️", "🙀", "👹", "😱", "☠️", "🍭"]
-            case .flowers: return ["🌹", "🌸", "💐", "🌺", "🌷", "🌻", "🥀", "🌼", "💮", "🪷", "🪻", "🏵", "🌾"]
-            case .fruits: return ["🍏", "🍎", "🍐", "🍊", "🍋", "🍋‍🟩", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑"]
-            case .enimals: return ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐻‍❄️", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸"]
-            }
-        }
-        
-        var themeColor: Color {
-            switch self {
-            case .halloween: return .orange
-            case .flowers: return .green
-            case .fruits: return .yellow
-            case .enimals: return .blue
-            }
-        }
-    }
+    @ObservedObject var viewModel: MemorizeGameViewModel
     
     @State var cardCount = 4
-    @State var cardTheme: CardTheme = .enimals
     
     var body: some View {
         VStack {
-            cardCountAdjusters
+            Text("\(viewModel.theme.title)")
+                .imageScale(.large)
+                .font(.largeTitle)
+            Text("Points: \(viewModel.score)").animation(.default)
             ScrollView {
-                cards
+                cards.animation(.default, value: viewModel.cards)
             }
             Spacer()
-            cardThemes
+            Button("New Game") {
+                viewModel.newGame()
+            }
+            .font(.title)
+            .buttonStyle(.borderless)
         }
         .padding()
     }
     
     var cards: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))]) {
-            let currentCards = cardTheme.emojis.shuffled().prefix(cardCount)
-            let shuffledEmojis = (currentCards + currentCards).shuffled()
-            ForEach(0..<shuffledEmojis.count, id: \.self) { index in
-                CardView(content: shuffledEmojis[index])
-                    .aspectRatio(2/3, contentMode: .fit)
-            }
-        }
-        .foregroundStyle(cardTheme.themeColor)
-    }
-    
-    var cardCountAdjusters: some View {
-        HStack {
-            cardRemover
-            Spacer()
-            Text("Memorize!")
-            Spacer()
-            cardAdder
-        }
-        .imageScale(.large)
-        .font(.largeTitle)
-    }
-    
-    var cardRemover: some View {
-        cardCountAdjuster(by: -1, symbol: "rectangle.stack.fill.badge.minus")
-    }
-    
-    var cardAdder: some View {
-        cardCountAdjuster(by: 1, symbol: "rectangle.stack.fill.badge.plus")
-    }
-    
-    var cardThemes: some View {
-        HStack(spacing: 30) {
-            ForEach(CardTheme.allCases, id: \.self) { theme in
-                Button {
-                    cardTheme = theme
-                } label: {
-                    VStack {
-                        Text(theme.emojis.first ?? "?")
-                            .shadow(color: theme.themeColor, radius: cardTheme == theme ? 20 : 0)
-                            .font(.largeTitle)
-                        Text(theme.title).lineLimit(1)
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 85), spacing:  0)], spacing: 0) {
+            ForEach(viewModel.cards) { card in
+                CardView(card)
+                    .aspectRatio(1/1, contentMode: .fit)
+                    .padding(4)
+                    .onTapGesture {
+                        viewModel.choose(card)
                     }
-                    .frame(maxWidth: .infinity)
-                }
             }
         }
-    }
-    
-    func cardCountAdjuster(by offset: Int, symbol: String) -> some View {
-        Button {
-            cardCount += offset
-        } label: {
-            Image(systemName: symbol)
-        }
-        .disabled(cardCount + offset < 4 || cardCount + offset > cardTheme.emojis.count)
+        .foregroundStyle(viewModel.themeColor)
     }
     
 }
 
 struct CardView: View {
-    let content: String
-    @State var isFaceUp = true
+    var card: MemorizeGameModel<String>.Card
+    
+    init(_ card: MemorizeGameModel<String>.Card) {
+        self.card = card
+    }
     
     var body: some View {
         ZStack {
@@ -129,17 +61,18 @@ struct CardView: View {
             Group {
                 base.foregroundColor(.white)
                 base.strokeBorder(lineWidth: 2)
-                Text(content).font(.largeTitle)
+                Text(card.content)
+                    .font(.system(size: 200))
+                    .minimumScaleFactor(0.01)
+                    .aspectRatio(1, contentMode: .fit)
             }
-            .opacity(isFaceUp ? 1 : 0)
-            base.fill().opacity(isFaceUp ? 0 : 1)
+            .opacity(card.isFaceUp ? 1 : 0)
+            base.fill().opacity(card.isFaceUp ? 0 : 1)
         }
-        .onTapGesture {
-            isFaceUp.toggle()
-        }
+        .opacity(card.isFaceUp || !card.isMatched ? 1 : 0)
     }
 }
 
 #Preview {
-    MemorizeGameView()
+    MemorizeGameView(viewModel: MemorizeGameViewModel())
 }
