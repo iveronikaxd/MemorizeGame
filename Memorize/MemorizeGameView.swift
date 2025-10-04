@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct MemorizeGameView: View {
     
     enum CardTheme: CaseIterable {
         case halloween
@@ -141,5 +141,5 @@ struct CardView: View {
 }
 
 #Preview {
-    ContentView()
+    MemorizeGameView()
 }
