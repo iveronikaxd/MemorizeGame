@@ -9,7 +9,11 @@ import Foundation
 
 struct CardThemeModel {
     
-    var currentTheme: Theme
+    private(set) var currentTheme: Theme
+    private(set) var level: Int = 1
+    var numberOfPairs: Int {
+        return currentTheme.numberOfPairs(for: level)
+    }
     
     private let themes: [Theme] = [.halloween, .flowers, .fruits, .enimals, .cars, .countries]
     
@@ -19,6 +23,10 @@ struct CardThemeModel {
     
     mutating func changeTheme() {
         currentTheme = themes.randomElement() ?? .halloween
+    }
+    
+    mutating func nextLevel(for score: Int) {
+        level = max(1, level + (score > 0 ? 1 : -1))
     }
     
     enum Theme {
@@ -51,16 +59,8 @@ struct CardThemeModel {
             }
         }
         
-        var numberOfPairs: Int {
-            return Int.random(in: 2...self.emojis.count)
-//            switch self {
-//            case .halloween: return 12
-//            case .flowers: return 10
-//            case .fruits: return 8
-//            case .enimals: return 12
-//            case .cars: return 8
-//            case .countries: return 10
-//            }
+        func numberOfPairs(for level: Int) -> Int {
+            return self.emojis.indices.contains(level) ? max(2, level + 1) : self.emojis.count
         }
     }
     

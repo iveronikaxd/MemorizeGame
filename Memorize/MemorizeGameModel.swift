@@ -28,7 +28,7 @@ struct MemorizeGameModel<CardContent> where CardContent: Equatable {
         set { cards.indices.forEach { cards[$0].isFaceUp = (newValue == $0) } }
     }
     
-    mutating func choose(_ card: Card) {
+    mutating func choose(_ card: Card, completion: (Int) -> Void) {
         if let chosenIndex = cards.firstIndex(where: { $0.id == card.id}) {
             if !cards[chosenIndex].isFaceUp && !cards[chosenIndex].isMatched {
                 if let potentialMatchIndex = indexOfTheOneAndOnlyFaceUpCard {
@@ -36,6 +36,9 @@ struct MemorizeGameModel<CardContent> where CardContent: Equatable {
                         cards[chosenIndex].isMatched = true
                         cards[potentialMatchIndex].isMatched = true
                         matched()
+                        if !cards.map({ $0.isMatched }).contains(false) {
+                            completion(score)
+                        }
                     } else {
                         mismatched(card1: cards[chosenIndex], card2: cards[potentialMatchIndex])
                     }
@@ -66,7 +69,6 @@ struct MemorizeGameModel<CardContent> where CardContent: Equatable {
         
         var isFaceUp = false {
             didSet {
-                print("\(content) \(id) isFaceUp - \(isFaceUp) (oldValue - \(oldValue)")
                 if !isFaceUp && oldValue == true {
                     isPreviouslySeen = true
                 }

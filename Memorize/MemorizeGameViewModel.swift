@@ -11,7 +11,7 @@ import Combine
 class MemorizeGameViewModel: ObservableObject {
     
     private static func createMemoryGame(with themeModel: CardThemeModel) -> MemorizeGameModel<String> {
-        return MemorizeGameModel(numberOfPairsOfCards: themeModel.currentTheme.numberOfPairs) { pairIndex in
+        return MemorizeGameModel(numberOfPairsOfCards: themeModel.numberOfPairs) { pairIndex in
             if themeModel.currentTheme.emojis.indices.contains(pairIndex) {
                 return themeModel.currentTheme.emojis[pairIndex]
             } else {
@@ -55,11 +55,13 @@ class MemorizeGameViewModel: ObservableObject {
     }
     
     func newGame() {
-        themeModel = .init()
+        themeModel.changeTheme()
     }
     
     func choose(_ card: MemorizeGameModel<String>.Card) {
-        model.choose(card)
+        model.choose(card) { score in
+            themeModel.nextLevel(for: score)
+        }
     }
     
 }
